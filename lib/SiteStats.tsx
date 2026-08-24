@@ -8,8 +8,31 @@ export default function SiteStats() {
   const [testUsers, setTestUsers] = useState(0);
 
   useEffect(() => {
+    const visitorIdKey = "turkdili_visitor_id";
+
+    let visitorId = localStorage.getItem(visitorIdKey);
+
+    if (!visitorId) {
+      visitorId = crypto.randomUUID();
+      localStorage.setItem(visitorIdKey, visitorId);
+    }
+
     const loadStats = async () => {
       try {
+        // Ushbu tashrifchini bazaga qo'shamiz
+        await supabase
+          .from("site_visits")
+          .upsert(
+            {
+              visitor_id: visitorId,
+            },
+            {
+              onConflict: "visitor_id",
+              ignoreDuplicates: true,
+            }
+          );
+
+        // Tashrifchilar soni
         const { data: visits, error: visitsError } = await supabase
           .from("site_visits")
           .select("visitor_id");
@@ -22,6 +45,7 @@ export default function SiteStats() {
 
         setVisitors(uniqueVisitors.size);
 
+        // Test ishlaganlar
         const { data: attempts, error: attemptsError } = await supabase
           .from("test_attempts")
           .select("visitor_id");
@@ -78,7 +102,7 @@ export default function SiteStats() {
           className="flex h-10 w-10 items-center justify-center rounded-xl text-lg"
           style={{ backgroundColor: "#F8DADA" }}
         >
-          📝
+          📖
         </div>
 
         <div className="text-left">
