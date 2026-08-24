@@ -1,6 +1,7 @@
 
 import type { Metadata } from "next";
 import "./globals.css";
+import VisitTracker from "../lib/VisitTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://SIZNING-DOMENINGIZ.com"),
@@ -67,7 +68,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr">
-      <body>{children}</body>
+      <body>
+  <VisitTracker />
+  {children}
+</body>
     </html>
   );
 }

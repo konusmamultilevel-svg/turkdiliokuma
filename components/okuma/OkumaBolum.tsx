@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -6,8 +7,8 @@ import { useRouter } from "next/navigation";
 import {
   okumaData,
   type Question,
-  type DragWord,
-} from "@/data/okumaData";
+  type DragDropWord,
+} from "@/data/okuma";
 
 import QuestionRenderer from "./QuestionRenderer";
 
@@ -32,8 +33,7 @@ export default function OkumaBolum({
     (item) => item.bolumId === bolumId,
   );
 
-  const storageKey =
-    `okuma_answers_test_${testId}`;
+  const storageKey = `okuma_answers_test_${testId}`;
 
   const [answers, setAnswers] =
     useState<Answers>({});
@@ -70,8 +70,7 @@ export default function OkumaBolum({
           JSON.stringify(updated),
         );
       } catch {
-        // sessionStorage mavjud bo'lmasa
-        // UI ishlashda davom etadi.
+        // sessionStorage mavjud bo'lmasa UI ishlashda davom etadi.
       }
 
       return updated;
@@ -95,6 +94,7 @@ export default function OkumaBolum({
       : 0;
 
   const isFirst = bolumId === 1;
+
   const isLast =
     test !== undefined &&
     bolumId === test.bolumler.length;
@@ -327,7 +327,7 @@ function DragDropQuestion({
 }: {
   context: {
     textWithBlanks: string;
-    words: DragWord[];
+    words: DragDropWord[];
   };
 
   questions: Question[];
@@ -373,7 +373,10 @@ function DragDropQuestion({
   ) => {
     if (!selectedWord) {
       if (answers[question.id]) {
-        saveAnswer(question.id, "");
+        saveAnswer(
+          question.id,
+          "",
+        );
       }
 
       return;
@@ -382,8 +385,14 @@ function DragDropQuestion({
     const previousAnswer =
       answers[question.id];
 
-    if (previousAnswer === selectedWord) {
-      saveAnswer(question.id, "");
+    if (
+      previousAnswer ===
+      selectedWord
+    ) {
+      saveAnswer(
+        question.id,
+        "",
+      );
 
       setSelectedWord(null);
 
@@ -414,7 +423,9 @@ function DragDropQuestion({
 
       <div className="drag-heading">
         <div>
-          <span>SÖZCÜKLER</span>
+          <span>
+            SÖZCÜKLER
+          </span>
 
           <h2>
             Uygun kelimeleri
@@ -429,45 +440,56 @@ function DragDropQuestion({
       </div>
 
       <div className="word-bank">
-        {context.words.map((word) => {
-          const used =
-            usedWords.has(word.id);
+        {context.words.map(
+          (word) => {
+            const used =
+              usedWords.has(
+                word.id,
+              );
 
-          const selected =
-            selectedWord === word.id;
+            const selected =
+              selectedWord ===
+              word.id;
 
-          return (
-            <button
-              type="button"
-              key={word.id}
-              disabled={used}
-              onClick={() =>
-                setSelectedWord(
+            return (
+              <button
+                type="button"
+                key={word.id}
+                disabled={used}
+                onClick={() =>
+                  setSelectedWord(
+                    selected
+                      ? null
+                      : word.id,
+                  )
+                }
+                className={`word-chip ${
                   selected
-                    ? null
-                    : word.id,
-                )
-              }
-              className={`word-chip ${
-                selected
-                  ? "selected"
-                  : ""
-              } ${
-                used
-                  ? "used"
-                  : ""
-              }`}
-            >
-              <b>{word.id}</b>
-              {word.word}
-            </button>
-          );
-        })}
+                    ? "selected"
+                    : ""
+                } ${
+                  used
+                    ? "used"
+                    : ""
+                }`}
+              >
+                <b>
+                  {word.id}
+                </b>
+
+                {word.word}
+              </button>
+            );
+          },
+        )}
       </div>
 
       <div className="drag-text">
         {parts.map(
-          (part, index) => {
+          (
+            part,
+            index,
+          ) => {
             const match =
               part.match(
                 /^\[S(\d+)\]$/,
@@ -475,14 +497,18 @@ function DragDropQuestion({
 
             if (!match) {
               return (
-                <span key={index}>
+                <span
+                  key={index}
+                >
                   {part}
                 </span>
               );
             }
 
             const number =
-              Number(match[1]);
+              Number(
+                match[1],
+              );
 
             const question =
               getQuestionByNumber(

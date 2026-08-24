@@ -1,169 +1,444 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+
 import OkumaLayout from "@/components/OkumaLayout";
 import { test1 } from "@/data/okuma/test1";
 
-const SCORE_TABLE = [
-  0, 20, 24, 27, 29, 32, 34, 36, 38, 39,
-  41, 42, 43, 44, 46, 47, 49, 51, 52, 54,
-  55, 57, 58, 60, 61, 63, 65, 66, 68, 70,
-  71, 73, 75, 75, 75, 75,
-];
+const STORAGE_KEY = "okuma_test_1_answers";
 
-function getCEFRLevel(score: number) {
-  if (score >= 65) return "C1";
-  if (score >= 51) return "B2";
-  if (score >= 38) return "B1";
-  return "Sertifika Yok";
+const SCORE_TABLE: Record<number, number> = {
+  0: 0,
+  1: 20,
+  2: 24,
+  3: 27,
+  4: 29,
+  5: 32,
+  6: 34,
+  7: 36,
+  8: 38,
+  9: 39,
+  10: 41,
+  11: 42,
+  12: 44,
+  13: 45,
+  14: 46,
+  15: 48,
+  16: 49,
+  17: 51,
+  18: 52,
+  19: 54,
+  20: 55,
+  21: 57,
+  22: 58,
+  23: 60,
+  24: 61,
+  25: 63,
+  26: 65,
+  27: 66,
+  28: 68,
+  29: 70,
+  30: 71,
+  31: 73,
+  32: 75,
+  33: 75,
+  34: 75,
+  35: 75,
+};
+
+function getLevel(score: number) {
+  if (score >= 65) {
+    return {
+      level: "C1",
+      message: "C1 seviyesindesiniz.",
+    };
+  }
+
+  if (score >= 51) {
+    return {
+      level: "B2",
+      message: "B2 seviyesindesiniz.",
+    };
+  }
+
+  if (score >= 38) {
+    return {
+      level: "B1",
+      message: "B1 seviyesindesiniz.",
+    };
+  }
+
+  return {
+    level: "—",
+    message: "Sertifika için yeterli puan alınamadı.",
+  };
+}
+
+function normalizeAnswer(value: string | undefined) {
+  return String(value ?? "")
+    .trim()
+    .toUpperCase();
 }
 
 export default function SonucPage() {
+  const params = useParams();
   const router = useRouter();
 
-  const [result, setResult] = useState<{
-    correct: number;
-    incorrect: number;
-    blank: number;
-    score: number;
-    cefr: string;
-  } | null>(null);
+  const id = Number(params.id);
+
+  const [mounted, setMounted] = useState(false);
+  const [answers, setAnswers] = useState<Record<string, string>>(
+    {}
+  );
 
   useEffect(() => {
-    const saved = sessionStorage.getItem(
-      "okuma_test_1_answers"
-    );
+    setMounted(true);
 
-    const answers: Record<string, string> = saved
-      ? JSON.parse(saved)
-      : {};
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
 
-    const questions = test1.bolumler.flatMap(
-      (bolum) => bolum.questions
-    );
-
-    let correct = 0;
-    let blank = 0;
-
-    questions.forEach((question) => {
-      const answer = answers[question.id];
-
-      if (!answer) {
-        blank++;
-      } else if (answer === question.correctAnswer) {
-        correct++;
+      if (!saved) {
+        setAnswers({});
+        return;
       }
-    });
 
-    const incorrect =
-      questions.length - correct - blank;
+      const parsed = JSON.parse(saved);
 
-    const index = Math.min(
-      correct,
-      SCORE_TABLE.length - 1
-    );
-
-    const score = SCORE_TABLE[index];
-
-    setResult({
-      correct,
-      incorrect,
-      blank,
-      score,
-      cefr: getCEFRLevel(score),
-    });
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        !Array.isArray(parsed)
+      ) {
+        setAnswers(parsed);
+      } else {
+        setAnswers({});
+      }
+    } catch {
+      setAnswers({});
+    }
   }, []);
 
-  if (!result) {
+  if (id !== 1) {
     return (
       <OkumaLayout>
-        <div className="py-20 text-center font-bold">
-          Sonuçlar hazırlanıyor...
+        <div className="mx-auto max-w-4xl rounded-2xl border border-[#e4ddd6] bg-white p-8 text-center shadow-sm">
+          <h1 className="text-2xl font-black text-[#8f1717]">
+            TEST BULUNAMADI
+          </h1>
         </div>
       </OkumaLayout>
     );
   }
 
-  const total = 35;
-
-  const percentage = Math.round(
-    (result.correct / total) * 100
+  const allQuestions = test1.bolumler.flatMap(
+    (bolum) => bolum.questions
   );
 
-  const restart = () => {
-    sessionStorage.removeItem(
-      "okuma_test_1_answers"
+  const correctCount = allQuestions.filter((question) => {
+    const userAnswer = normalizeAnswer(
+      answers[question.id]
     );
+
+    const correctAnswer = normalizeAnswer(
+      question.correctAnswer
+    );
+
+    return (
+      userAnswer !== "" &&
+      userAnswer === correctAnswer
+    );
+  }).length;
+
+  const answeredCount = allQuestions.filter(
+    (question) =>
+      normalizeAnswer(answers[question.id]) !== ""
+  ).length;
+
+  const wrongQuestions = allQuestions.filter((question) => {
+    const userAnswer = normalizeAnswer(
+      answers[question.id]
+    );
+
+    const correctAnswer = normalizeAnswer(
+      question.correctAnswer
+    );
+
+    return (
+      userAnswer !== "" &&
+      userAnswer !== correctAnswer
+    );
+  });
+
+  const wrongCount = wrongQuestions.length;
+
+  const emptyQuestions = allQuestions.filter(
+    (question) =>
+      normalizeAnswer(answers[question.id]) === ""
+  );
+
+  const emptyCount = emptyQuestions.length;
+
+  const score = mounted
+    ? SCORE_TABLE[Math.min(correctCount, 35)] ?? 0
+    : 0;
+
+  const result = getLevel(score);
+
+  const passed = score >= 38;
+
+  const restart = () => {
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Storage ishlamasa ham davom etadi.
+    }
 
     router.push("/okuma/1/bolum/1");
   };
 
   return (
     <OkumaLayout>
-      <div className="mx-auto max-w-4xl">
-        <div className="text-center">
-          <div className="text-sm font-black tracking-[0.25em] text-[#a61b1b]">
-            SINAV TAMAMLANDI
+      {/* =====================================================
+          MAIN RESULT
+      ====================================================== */}
+
+      <main className="mx-auto max-w-4xl">
+        {/* HEADER */}
+        <section className="rounded-2xl border border-[#e4ddd6] bg-white px-5 py-5 shadow-sm">
+          <div className="text-xs font-black tracking-[0.2em] text-[#a61b1b]">
+            OKUMA TESTİ 1
           </div>
 
-          <h1 className="mt-3 text-4xl font-black">
-            SONUÇLARINIZ
+          <h1 className="mt-1 text-2xl font-black text-gray-900">
+            Sınav Sonucu
           </h1>
-        </div>
+        </section>
 
-        <div className="mt-8 rounded-3xl bg-[#8f1717] p-8 text-center text-white shadow-xl">
-          <div className="text-sm font-bold uppercase tracking-widest text-white/70">
-            CEFR SEVİYESİ
+        {/* SCORE */}
+        <section className="mt-5 rounded-2xl bg-[#8f1717] px-5 py-7 text-center text-white shadow-lg">
+          <div className="text-xs font-bold tracking-widest text-white/70">
+            TOPLAM PUAN
           </div>
 
-          <div className="mt-3 text-7xl font-black">
-            {result.cefr}
+          <div className="mt-1 text-6xl font-black leading-none">
+            {score}
           </div>
 
-          <div className="mt-4 text-lg">
-            {result.score} puan • %{percentage} başarı
+          <div className="mt-2 text-sm font-bold text-white/70">
+            / 75
           </div>
-        </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="mt-5 inline-flex rounded-xl bg-white px-6 py-2 text-2xl font-black text-[#8f1717]">
+            {result.level}
+          </div>
+
+          <p className="mt-3 text-sm font-semibold text-white/85">
+            {result.message}
+          </p>
+
+          {!passed && (
+            <div className="mx-auto mt-4 max-w-md rounded-xl bg-white/10 px-4 py-3 text-sm font-bold">
+              38 balldan kam ball to‘plagan talabgorlarga
+              sertifikat berilmaydi.
+            </div>
+          )}
+        </section>
+
+        {/* STATISTICS */}
+        <section className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-4">
           <Stat
-            value={total}
-            label="Toplam"
+            value={correctCount}
+            label="To‘g‘ri"
           />
 
           <Stat
-            value={result.correct}
-            label="Doğru"
+            value={wrongCount}
+            label="Noto‘g‘ri"
           />
 
           <Stat
-            value={result.incorrect}
-            label="Yanlış"
+            value={emptyCount}
+            label="Bo‘sh"
           />
 
-          <Stat
-            value={result.blank}
-            label="Boş"
-          />
-        </div>
+          <div className="col-span-3 sm:col-span-1">
+            <Stat
+              value={allQuestions.length}
+              label="Jami"
+            />
+          </div>
+        </section>
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        {/* LEVEL INFORMATION */}
+        <section className="mt-5 rounded-2xl border border-[#e4ddd6] bg-white p-5 shadow-sm">
+          <div className="mb-3 text-sm font-black text-[#a61b1b]">
+            CEFR NATIJASI
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold">
+            <div
+              className={`rounded-xl p-3 ${
+                result.level === "B1"
+                  ? "bg-[#a61b1b] text-white"
+                  : "bg-[#f8f5f2] text-gray-500"
+              }`}
+            >
+              <div className="text-lg font-black">
+                B1
+              </div>
+
+              <div>38–50</div>
+            </div>
+
+            <div
+              className={`rounded-xl p-3 ${
+                result.level === "B2"
+                  ? "bg-[#a61b1b] text-white"
+                  : "bg-[#f8f5f2] text-gray-500"
+              }`}
+            >
+              <div className="text-lg font-black">
+                B2
+              </div>
+
+              <div>51–64</div>
+            </div>
+
+            <div
+              className={`rounded-xl p-3 ${
+                result.level === "C1"
+                  ? "bg-[#a61b1b] text-white"
+                  : "bg-[#f8f5f2] text-gray-500"
+              }`}
+            >
+              <div className="text-lg font-black">
+                C1
+              </div>
+
+              <div>65–75</div>
+            </div>
+          </div>
+        </section>
+
+        {/* WRONG ANSWERS */}
+        {mounted && wrongQuestions.length > 0 && (
+          <section className="mt-5 rounded-2xl border border-[#e4ddd6] bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-black text-gray-900">
+                Xato javoblar
+              </h2>
+
+              <span className="rounded-full bg-[#a61b1b]/10 px-3 py-1 text-xs font-black text-[#a61b1b]">
+                {wrongQuestions.length} ta
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {wrongQuestions.map((question) => (
+                <div
+                  key={question.id}
+                  className="rounded-xl border border-gray-200 bg-[#f8f5f2] p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-black">
+                      SAVOL {question.number}
+                    </span>
+
+                    <span className="rounded-lg bg-red-100 px-2.5 py-1 text-xs font-black text-red-700">
+                      XATO
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <div className="rounded-lg bg-white p-3">
+                      <div className="text-[10px] font-black uppercase text-gray-400">
+                        Sizning javobingiz
+                      </div>
+
+                      <div className="mt-1 font-black text-red-600">
+                        {answers[question.id] || "—"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg bg-white p-3">
+                      <div className="text-[10px] font-black uppercase text-gray-400">
+                        To‘g‘ri javob
+                      </div>
+
+                      <div className="mt-1 font-black text-green-600">
+                        {question.correctAnswer}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* EMPTY ANSWERS */}
+        {mounted && emptyQuestions.length > 0 && (
+          <section className="mt-5 rounded-2xl border border-[#e4ddd6] bg-white p-5 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-black">
+                Javob berilmagan savollar
+              </h2>
+
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-black text-gray-500">
+                {emptyQuestions.length} ta
+              </span>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {emptyQuestions.map((question) => (
+                <span
+                  key={question.id}
+                  className="rounded-lg bg-gray-100 px-3 py-2 text-xs font-black text-gray-600"
+                >
+                  {question.number}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* PERFECT RESULT */}
+        {mounted &&
+          wrongQuestions.length === 0 &&
+          emptyQuestions.length === 0 && (
+            <section className="mt-5 rounded-2xl border border-green-200 bg-green-50 p-5 text-center">
+              <div className="text-lg font-black text-green-700">
+                🎉 Barcha savollarga to‘g‘ri javob berdingiz!
+              </div>
+
+              <p className="mt-1 text-sm font-semibold text-green-600">
+                Natijangiz: {score} ball — {result.level}
+              </p>
+            </section>
+          )}
+
+        {/* BUTTONS */}
+        <section className="mt-5 grid gap-3 sm:grid-cols-2">
           <button
+            type="button"
             onClick={() => router.push("/okuma")}
-            className="flex-1 rounded-xl border-2 border-[#a61b1b] bg-white py-4 font-black text-[#a61b1b]"
+            className="rounded-xl border border-gray-300 bg-white px-5 py-3 font-black text-gray-700 transition hover:bg-gray-50"
           >
-            ← TESTLERE DÖN
+            ← TESTLARGA QAYTISH
           </button>
 
           <button
+            type="button"
             onClick={restart}
-            className="flex-1 rounded-xl bg-[#a61b1b] py-4 font-black text-white"
+            className="rounded-xl bg-[#a61b1b] px-5 py-3 font-black text-white shadow-md transition hover:bg-[#8f1717]"
           >
-            TESTİ TEKRARLA ↺
+            TESTNI QAYTA ISHLASH
           </button>
-        </div>
-      </div>
+        </section>
+      </main>
+
+     
     </OkumaLayout>
   );
 }
@@ -176,12 +451,12 @@ function Stat({
   label: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[#e2dbd4] bg-white p-5 text-center shadow-sm">
-      <div className="text-3xl font-black text-[#a61b1b]">
+    <div className="rounded-2xl border border-[#e4ddd6] bg-white p-4 text-center shadow-sm">
+      <div className="text-2xl font-black text-[#a61b1b]">
         {value}
       </div>
 
-      <div className="mt-1 text-xs font-black uppercase tracking-wider text-gray-500">
+      <div className="mt-1 text-xs font-bold text-gray-500">
         {label}
       </div>
     </div>
