@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -19,6 +20,10 @@ export default function SiteStats() {
 
     const loadStats = async () => {
       try {
+        // =========================
+        // TASHRIFCHILAR
+        // =========================
+
         const { error: insertError } = await supabase
           .from("site_visits")
           .upsert(
@@ -32,53 +37,113 @@ export default function SiteStats() {
           );
 
         if (insertError) {
-          console.error("VISITOR INSERT ERROR:", insertError);
+          console.error(
+            "VISITOR INSERT ERROR:",
+            insertError
+          );
         }
 
-        const { data: visits, error: visitsError } = await supabase
+        const {
+          data: visits,
+          error: visitsError,
+        } = await supabase
           .from("site_visits")
           .select("visitor_id");
 
         if (visitsError) {
-          console.error("VISITOR SELECT ERROR:", visitsError);
+          console.error(
+            "VISITOR SELECT ERROR:",
+            visitsError
+          );
         } else {
           const uniqueVisitors = new Set(
-            (visits || []).map((item) => item.visitor_id)
+            (visits || []).map(
+              (item) => item.visitor_id
+            )
           );
 
           setVisitors(uniqueVisitors.size);
         }
 
-        const { data: attempts, error: attemptsError } = await supabase
+        // =========================
+        // TEST ISHLAGANLAR
+        // =========================
+        // Har bir test ishlash alohida hisoblanadi.
+        // Masalan:
+        // 1-urinish = 1
+        // 2-urinish = 2
+        // 3-urinish = 3
+
+        const {
+          count,
+          error: attemptsError,
+        } = await supabase
           .from("test_attempts")
-          .select("visitor_id");
+          .select("*", {
+            count: "exact",
+            head: true,
+          });
 
         if (attemptsError) {
-          console.error("TEST USERS ERROR:", attemptsError);
+          console.error(
+            "TEST USERS ERROR:",
+            attemptsError
+          );
         } else {
-          const uniqueTestUsers = new Set(
-            (attempts || []).map((item) => item.visitor_id)
+          console.log(
+            "JAMI TEST URINISHLARI:",
+            count
           );
 
-          setTestUsers((attempts || []).length);
+          setTestUsers(count ?? 0);
         }
       } catch (error) {
-        console.error("STATISTICS ERROR:", error);
+        console.error(
+          "STATISTICS ERROR:",
+          error
+        );
       }
     };
 
+    // Birinchi marta yuklash
     loadStats();
+
+    // Test tugagandan keyin statistikani yangilash
+    const handleTestCompleted = () => {
+      loadStats();
+    };
+
+    window.addEventListener(
+      "test-attempt-saved",
+      handleTestCompleted
+    );
+
+    return () => {
+      window.removeEventListener(
+        "test-attempt-saved",
+        handleTestCompleted
+      );
+    };
   }, []);
 
   return (
     <div className="mt-7 flex justify-center gap-4">
+
+      {/* =========================
+          TASHRIFCHILAR
+      ========================= */}
+
       <div
         className="flex items-center gap-3 rounded-2xl border bg-white px-5 py-3 shadow-sm"
-        style={{ borderColor: "#F8DADA" }}
+        style={{
+          borderColor: "#F8DADA",
+        }}
       >
         <div
           className="flex h-10 w-10 items-center justify-center rounded-xl text-lg"
-          style={{ backgroundColor: "#F8DADA" }}
+          style={{
+            backgroundColor: "#F8DADA",
+          }}
         >
           👥
         </div>
@@ -86,7 +151,9 @@ export default function SiteStats() {
         <div className="text-left">
           <div
             className="text-xl font-black leading-none"
-            style={{ color: "#7F1D1D" }}
+            style={{
+              color: "#7F1D1D",
+            }}
           >
             {visitors.toLocaleString()}
           </div>
@@ -97,13 +164,21 @@ export default function SiteStats() {
         </div>
       </div>
 
+      {/* =========================
+          TEST ISHLAGANLAR
+      ========================= */}
+
       <div
         className="flex items-center gap-3 rounded-2xl border bg-white px-5 py-3 shadow-sm"
-        style={{ borderColor: "#F8DADA" }}
+        style={{
+          borderColor: "#F8DADA",
+        }}
       >
         <div
           className="flex h-10 w-10 items-center justify-center rounded-xl text-lg"
-          style={{ backgroundColor: "#F8DADA" }}
+          style={{
+            backgroundColor: "#F8DADA",
+          }}
         >
           📖
         </div>
@@ -111,7 +186,9 @@ export default function SiteStats() {
         <div className="text-left">
           <div
             className="text-xl font-black leading-none"
-            style={{ color: "#7F1D1D" }}
+            style={{
+              color: "#7F1D1D",
+            }}
           >
             {testUsers.toLocaleString()}
           </div>
@@ -121,6 +198,7 @@ export default function SiteStats() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }
