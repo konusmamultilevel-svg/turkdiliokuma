@@ -1,4 +1,3 @@
-
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
@@ -7,19 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://SIZNING-DOMENINGIZ.uz/sitemap.xml",
+    sitemap: "https://turkdiliokuma.uz/sitemap.xml",
   };
 }
-
-import type { MetadataRoute } from "next";
-
-export default function robots(): MetadataRoute.Robots {
-  return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-    },
-    sitemap: "https://SIZNING-DOMENINGIZ.uz/sitemap.xml",
-  };
-}
-
