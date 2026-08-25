@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,37 +8,41 @@ export default function SiteStats() {
   const [testUsers, setTestUsers] = useState(0);
 
   useEffect(() => {
-    const visitorIdKey = "turkdili_visitor_id";
-
-    let visitorId = localStorage.getItem(visitorIdKey);
-
-    if (!visitorId) {
-      visitorId = crypto.randomUUID();
-      localStorage.setItem(visitorIdKey, visitorId);
-    }
-
     const loadStats = async () => {
       try {
         // =========================
         // TASHRIFCHILAR
         // =========================
+        let visitorId = localStorage.getItem(
+          "turkdili_visitor_id"
+        );
 
-        const { error: insertError } = await supabase
-          .from("site_visits")
-          .upsert(
-            {
-              visitor_id: visitorId,
-            },
-            {
-              onConflict: "visitor_id",
-              ignoreDuplicates: true,
-            }
+        if (!visitorId) {
+          visitorId = crypto.randomUUID();
+
+          localStorage.setItem(
+            "turkdili_visitor_id",
+            visitorId
           );
+        }
 
-        if (insertError) {
+        const { error: visitInsertError } =
+          await supabase
+            .from("site_visits")
+            .upsert(
+              {
+                visitor_id: visitorId,
+              },
+              {
+                onConflict: "visitor_id",
+                ignoreDuplicates: true,
+              }
+            );
+
+        if (visitInsertError) {
           console.error(
             "VISITOR INSERT ERROR:",
-            insertError
+            visitInsertError
           );
         }
 
@@ -62,18 +65,14 @@ export default function SiteStats() {
             )
           );
 
-          setVisitors(uniqueVisitors.size);
+          setVisitors(
+            uniqueVisitors.size
+          );
         }
 
         // =========================
         // TEST ISHLAGANLAR
         // =========================
-        // Har bir test ishlash alohida hisoblanadi.
-        // Masalan:
-        // 1-urinish = 1
-        // 2-urinish = 2
-        // 3-urinish = 3
-
         const {
           count,
           error: attemptsError,
@@ -105,10 +104,8 @@ export default function SiteStats() {
       }
     };
 
-    // Birinchi marta yuklash
     loadStats();
 
-    // Test tugagandan keyin statistikani yangilash
     const handleTestCompleted = () => {
       loadStats();
     };
@@ -129,10 +126,7 @@ export default function SiteStats() {
   return (
     <div className="mt-7 flex justify-center gap-4">
 
-      {/* =========================
-          TASHRIFCHILAR
-      ========================= */}
-
+      {/* TASHRIFCHILAR */}
       <div
         className="flex items-center gap-3 rounded-2xl border bg-white px-5 py-3 shadow-sm"
         style={{
@@ -164,10 +158,7 @@ export default function SiteStats() {
         </div>
       </div>
 
-      {/* =========================
-          TEST ISHLAGANLAR
-      ========================= */}
-
+      {/* TEST ISHLAGANLAR */}
       <div
         className="flex items-center gap-3 rounded-2xl border bg-white px-5 py-3 shadow-sm"
         style={{
