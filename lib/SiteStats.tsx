@@ -60,7 +60,7 @@ export default function SiteStats() {
             (attempts || []).map((item) => item.visitor_id)
           );
 
-          setTestUsers(uniqueTestUsers.size);
+          setTestUsers((attempts || []).length);
         }
       } catch (error) {
         console.error("STATISTICS ERROR:", error);
