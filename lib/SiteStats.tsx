@@ -12,9 +12,7 @@ export default function SiteStats() {
         // =========================
         // ZİYARETÇİLER
         // =========================
-        let visitorId = localStorage.getItem(
-          "turkdili_visitor_id"
-        );
+        let visitorId = localStorage.getItem("turkdili_visitor_id");
 
         if (!visitorId) {
           visitorId = crypto.randomUUID();
@@ -25,18 +23,17 @@ export default function SiteStats() {
           );
         }
 
-        const { error: visitInsertError } =
-          await supabase
-            .from("site_visits")
-            .upsert(
-              {
-                visitor_id: visitorId,
-              },
-              {
-                onConflict: "visitor_id",
-                ignoreDuplicates: true,
-              }
-            );
+        const { error: visitInsertError } = await supabase
+          .from("site_visits")
+          .upsert(
+            {
+              visitor_id: visitorId,
+            },
+            {
+              onConflict: "visitor_id",
+              ignoreDuplicates: true,
+            }
+          );
 
         if (visitInsertError) {
           console.error(
@@ -78,37 +75,75 @@ export default function SiteStats() {
   }, []);
 
   return (
-    <div className="mt-7 flex justify-center">
-      {/* ZİYARETÇİLER */}
+    <div className="mt-6 flex justify-center px-4">
       <div
-        className="flex items-center gap-3 rounded-2xl border bg-white px-5 py-3 shadow-sm"
+        className="
+          inline-flex
+          items-center
+          rounded-full
+          border
+          bg-white
+          px-4
+          py-2
+          shadow-[0_4px_18px_rgba(127,29,29,0.07)]
+          transition-all
+          duration-300
+          hover:-translate-y-0.5
+          hover:shadow-[0_7px_22px_rgba(127,29,29,0.11)]
+        "
         style={{
-          borderColor: "#F8DADA",
+          borderColor: "#F3D0D0",
         }}
       >
+        {/* ICON */}
         <div
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-lg"
+          className="
+            mr-2
+            flex
+            h-7
+            w-7
+            shrink-0
+            items-center
+            justify-center
+            rounded-full
+            text-sm
+          "
           style={{
-            backgroundColor: "#F8DADA",
+            background:
+              "linear-gradient(135deg, #FCE7E7 0%, #F8DADA 100%)",
           }}
         >
           👥
         </div>
 
-        <div className="text-left">
-          <div
-            className="text-xl font-black leading-none"
-            style={{
-              color: "#7F1D1D",
-            }}
-          >
-            {visitors.toLocaleString()}
-          </div>
+        {/* NUMBER */}
+        <span
+          className="
+            text-base
+            font-extrabold
+            leading-none
+          "
+          style={{
+            color: "#7F1D1D",
+          }}
+        >
+          {visitors.toLocaleString()}
+        </span>
 
-          <div className="mt-1 text-[11px] font-bold text-slate-400">
-            Ziyaretçiler
-          </div>
-        </div>
+        {/* LABEL */}
+        <span
+          className="
+            ml-1.5
+            text-xs
+            font-semibold
+            leading-none
+          "
+          style={{
+            color: "#9F6B6B",
+          }}
+        >
+          Ziyaretçiler
+        </span>
       </div>
     </div>
   );
