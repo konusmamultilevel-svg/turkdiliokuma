@@ -5,8 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 
 import OkumaLayout from "@/components/OkumaLayout";
 import { test1 } from "@/data/okuma/test1";
+import { test2 } from "@/data/okuma/test2";
 
-const STORAGE_KEY = "okuma_test_1_answers";
+const STORAGE_KEYS = {
+  1: "okuma_test_1_answers",
+  2: "okuma_test_2_answers",
+};
 
 const SCORE_TABLE: Record<number, number> = {
   0: 0,
@@ -87,6 +91,13 @@ export default function SonucPage() {
 
   const id = Number(params.id);
 
+const test = id === 1 ? test1 : test2;
+
+const storageKey =
+  id === 1
+    ? STORAGE_KEYS[1]
+    : STORAGE_KEYS[2];
+
   const [mounted, setMounted] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>(
     {}
@@ -96,7 +107,7 @@ export default function SonucPage() {
     setMounted(true);
 
     try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
+      const saved = sessionStorage.getItem(storageKey);
 
       if (!saved) {
         setAnswers({});
@@ -119,7 +130,7 @@ export default function SonucPage() {
     }
   }, []);
 
-  if (id !== 1) {
+  if (id !== 1 && id !== 2) {
     return (
       <OkumaLayout>
         <div className="mx-auto max-w-4xl rounded-2xl border border-[#e4ddd6] bg-white p-8 text-center shadow-sm">
@@ -131,7 +142,7 @@ export default function SonucPage() {
     );
   }
 
-  const allQuestions = test1.bolumler.flatMap(
+  const allQuestions = test.bolumler.flatMap(
     (bolum) => bolum.questions
   );
 
@@ -189,12 +200,12 @@ export default function SonucPage() {
 
   const restart = () => {
     try {
-      sessionStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(storageKey);
     } catch {
       // Storage ishlamasa ham davom etadi.
     }
 
-    router.push("/okuma/1/bolum/1");
+    router.push(`/okuma/${id}/bolum/1`);
   };
 
   return (

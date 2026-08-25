@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 
 import OkumaLayout from "@/components/OkumaLayout";
 import { test1 } from "@/data/okuma/test1";
+import { test2 } from "@/data/okuma/test2";
 
 const colors = {
   redLight: "#F8DADA",
@@ -20,7 +21,9 @@ export default function OkumaTestPage() {
 
   const id = Number(params.id);
 
-  if (id !== 1) {
+const test = id === 1 ? test1 : test2;
+
+if (id !== 1 && id !== 2) {
     return (
       <OkumaLayout>
         <div className="mx-auto max-w-4xl rounded-[2rem] border border-[#e5ddd6] bg-white p-10 text-center shadow-sm">
@@ -63,7 +66,7 @@ export default function OkumaTestPage() {
     );
   }
 
-  const totalQuestions = test1.bolumler.reduce(
+  const totalQuestions = test.bolumler.reduce(
     (sum, bolum) => sum + bolum.questions.length,
     0
   );
@@ -129,7 +132,7 @@ export default function OkumaTestPage() {
               </div>
 
               <h1 className="mt-5 text-4xl font-black leading-tight text-white md:text-6xl">
-                OKUMA TESTİ 01
+                {test.title}
               </h1>
 
               <p className="mt-5 max-w-3xl text-base leading-8 text-white/80 md:text-lg">
@@ -161,7 +164,7 @@ export default function OkumaTestPage() {
 
             <InfoCard
               title="BÖLÜM"
-              value={String(test1.bolumler.length)}
+              value={String(test.bolumler.length)}
               text="Farklı okuma soru bölümü."
             />
 
@@ -204,7 +207,7 @@ export default function OkumaTestPage() {
             </h2>
 
             <div className="mt-6 space-y-3">
-              {test1.bolumler.map((bolum) => (
+              {test.bolumler.map((bolum) => (
                 <div
                   key={bolum.bolumId}
                   className="flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between"

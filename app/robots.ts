@@ -10,3 +10,16 @@ export default function robots(): MetadataRoute.Robots {
     sitemap: "https://SIZNING-DOMENINGIZ.uz/sitemap.xml",
   };
 }
+
+import type { MetadataRoute } from "next";
+
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: {
+      userAgent: "*",
+      allow: "/",
+    },
+    sitemap: "https://SIZNING-DOMENINGIZ.uz/sitemap.xml",
+  };
+}
+

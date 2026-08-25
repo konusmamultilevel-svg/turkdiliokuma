@@ -4,7 +4,7 @@ import "./globals.css";
 import VisitTracker from "../lib/VisitTracker";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://SIZNING-DOMENINGIZ.com"),
+  metadataBase: new URL("https://turkdiliokuma.com"),
 
   title: {
     default: "Türk Dili Multilevel | Türkçe CEFR Testleri",
