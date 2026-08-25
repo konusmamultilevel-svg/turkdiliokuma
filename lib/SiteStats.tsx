@@ -7,12 +7,47 @@ export default function SiteStats() {
   const [visitors, setVisitors] = useState(0);
 
   useEffect(() => {
-    const loadStats = async () => {
+    let isMounted = true;
+
+    // ==========================================
+    // UMUMIY TASHRIFLAR SONINI OLISH
+    // ==========================================
+    const loadVisitorCount = async () => {
       try {
-        // =========================
-        // ZİYARETÇİLER
-        // =========================
-        let visitorId = localStorage.getItem("turkdili_visitor_id");
+        const { count, error } = await supabase
+          .from("site_visits")
+          .select("*", {
+            count: "exact",
+            head: true,
+          });
+
+        if (error) {
+          console.error(
+            "VISITOR COUNT ERROR:",
+            error
+          );
+          return;
+        }
+
+        if (isMounted) {
+          setVisitors(count ?? 0);
+        }
+      } catch (error) {
+        console.error(
+          "VISITOR COUNT ERROR:",
+          error
+        );
+      }
+    };
+
+    // ==========================================
+    // HAR BIR KIRISHNI ALOHIDA TASHRIF SIFATIDA
+    // SAQLASH
+    // ==========================================
+    const registerVisit = async () => {
+      try {
+        let visitorId =
+          localStorage.getItem("turkdili_visitor_id");
 
         if (!visitorId) {
           visitorId = crypto.randomUUID();
@@ -23,55 +58,44 @@ export default function SiteStats() {
           );
         }
 
-        const { error: visitInsertError } = await supabase
+        const { error } = await supabase
           .from("site_visits")
-          .upsert(
-            {
-              visitor_id: visitorId,
-            },
-            {
-              onConflict: "visitor_id",
-              ignoreDuplicates: true,
-            }
-          );
+          .insert({
+            visitor_id: visitorId,
+          });
 
-        if (visitInsertError) {
+        if (error) {
           console.error(
             "VISITOR INSERT ERROR:",
-            visitInsertError
+            error
           );
         }
 
-        const {
-          data: visits,
-          error: visitsError,
-        } = await supabase
-          .from("site_visits")
-          .select("visitor_id");
-
-        if (visitsError) {
-          console.error(
-            "VISITOR SELECT ERROR:",
-            visitsError
-          );
-        } else {
-          const uniqueVisitors = new Set(
-            (visits || []).map(
-              (item) => item.visitor_id
-            )
-          );
-
-          setVisitors(uniqueVisitors.size);
-        }
+        // Yangi sonni darhol olish
+        await loadVisitorCount();
       } catch (error) {
         console.error(
-          "STATISTICS ERROR:",
+          "VISITOR REGISTER ERROR:",
           error
         );
       }
     };
 
-    loadStats();
+    // Birinchi kirishda tashrifni yozish
+    registerVisit();
+
+    // ==========================================
+    // BOSHQA FOYDALANUVCHILAR KIRGANDA
+    // SONNI YANGILAB TURISH
+    // ==========================================
+    const interval = setInterval(() => {
+      loadVisitorCount();
+    }, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   return (
@@ -116,7 +140,7 @@ export default function SiteStats() {
           👥
         </div>
 
-        {/* NUMBER */}
+        {/* SON */}
         <span
           className="
             text-base
@@ -127,10 +151,10 @@ export default function SiteStats() {
             color: "#7F1D1D",
           }}
         >
-          {visitors.toLocaleString()}
+          {visitors.toLocaleString("tr-TR")}
         </span>
 
-        {/* LABEL */}
+        {/* TURKCHA NOM */}
         <span
           className="
             ml-1.5
