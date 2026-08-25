@@ -5,13 +5,12 @@ import { supabase } from "./supabase";
 
 export default function SiteStats() {
   const [visitors, setVisitors] = useState(0);
-  const [testUsers, setTestUsers] = useState(0);
 
   useEffect(() => {
     const loadStats = async () => {
       try {
         // =========================
-        // TASHRIFCHILAR
+        // ZİYARETÇİLER
         // =========================
         let visitorId = localStorage.getItem(
           "turkdili_visitor_id"
@@ -65,36 +64,7 @@ export default function SiteStats() {
             )
           );
 
-          setVisitors(
-            uniqueVisitors.size
-          );
-        }
-
-        // =========================
-        // TEST ISHLAGANLAR
-        // =========================
-        const {
-          count,
-          error: attemptsError,
-        } = await supabase
-          .from("test_attempts")
-          .select("*", {
-            count: "exact",
-            head: true,
-          });
-
-        if (attemptsError) {
-          console.error(
-            "TEST USERS ERROR:",
-            attemptsError
-          );
-        } else {
-          console.log(
-            "JAMI TEST URINISHLARI:",
-            count
-          );
-
-          setTestUsers(count ?? 0);
+          setVisitors(uniqueVisitors.size);
         }
       } catch (error) {
         console.error(
@@ -105,28 +75,11 @@ export default function SiteStats() {
     };
 
     loadStats();
-
-    const handleTestCompleted = () => {
-      loadStats();
-    };
-
-    window.addEventListener(
-      "test-attempt-saved",
-      handleTestCompleted
-    );
-
-    return () => {
-      window.removeEventListener(
-        "test-attempt-saved",
-        handleTestCompleted
-      );
-    };
   }, []);
 
   return (
-    <div className="mt-7 flex justify-center gap-4">
-
-      {/* TASHRIFCHILAR */}
+    <div className="mt-7 flex justify-center">
+      {/* ZİYARETÇİLER */}
       <div
         className="flex items-center gap-3 rounded-2xl border bg-white px-5 py-3 shadow-sm"
         style={{
@@ -153,43 +106,10 @@ export default function SiteStats() {
           </div>
 
           <div className="mt-1 text-[11px] font-bold text-slate-400">
-            Tashrifchilar
+            Ziyaretçiler
           </div>
         </div>
       </div>
-
-      {/* TEST ISHLAGANLAR */}
-      <div
-        className="flex items-center gap-3 rounded-2xl border bg-white px-5 py-3 shadow-sm"
-        style={{
-          borderColor: "#F8DADA",
-        }}
-      >
-        <div
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-lg"
-          style={{
-            backgroundColor: "#F8DADA",
-          }}
-        >
-          📖
-        </div>
-
-        <div className="text-left">
-          <div
-            className="text-xl font-black leading-none"
-            style={{
-              color: "#7F1D1D",
-            }}
-          >
-            {testUsers.toLocaleString()}
-          </div>
-
-          <div className="mt-1 text-[11px] font-bold text-slate-400">
-            Test ishlaganlar
-          </div>
-        </div>
-      </div>
-
     </div>
   );
 }
