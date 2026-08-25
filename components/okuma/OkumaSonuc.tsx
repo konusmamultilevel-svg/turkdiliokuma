@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -62,7 +63,7 @@ function formatAnswer(
     return "Cevaplanmadı";
   }
 
-  /* Matching */
+  /* MATCHING */
   if (question.type === "matching") {
     if (!question.matchingItems) {
       return answer;
@@ -90,10 +91,10 @@ function formatAnswer(
           return null;
         }
 
-        const option = question.matchingOptions?.find(
-          (opt: any) =>
-            opt.id === selectedId
-        );
+        const option =
+          question.matchingOptions?.find(
+            (opt: any) => opt.id === selectedId
+          );
 
         return option?.text ?? selectedId;
       })
@@ -104,7 +105,7 @@ function formatAnswer(
       : answer;
   }
 
-  /* Ordering */
+  /* ORDERING */
   if (question.type === "ordering") {
     if (!question.orderingItems) {
       return answer;
@@ -114,21 +115,19 @@ function formatAnswer(
       .split(",")
       .filter(Boolean);
 
-    const result = ids
-      .map((id: string) => {
-        const item =
-          question.orderingItems?.find(
-            (item: any) =>
-              item.id === id
-          );
+    const result = ids.map((id: string) => {
+      const item =
+        question.orderingItems?.find(
+          (item: any) => item.id === id
+        );
 
-        return item?.text ?? id;
-      });
+      return item?.text ?? id;
+    });
 
     return result.join(" → ");
   }
 
-  /* Multiple choice / True False / Drag Drop */
+  /* MULTIPLE CHOICE / TRUE FALSE / DRAG DROP */
   const option =
     question.options?.find(
       (item: any) =>
@@ -184,10 +183,7 @@ function checkQuestion(
     question.type === "true-false-unknown" ||
     question.type === "drag-drop"
   ) {
-    return (
-      answer ===
-      question.correctAnswer
-    );
+    return answer === question.correctAnswer;
   }
 
   if (question.type === "matching") {
@@ -199,14 +195,10 @@ function checkQuestion(
       .split("|")
       .filter(Boolean);
 
-    const selected: Record<
-      string,
-      string
-    > = {};
+    const selected: Record<string, string> = {};
 
     pairs.forEach((pair: string) => {
-      const [key, value] =
-        pair.split(":");
+      const [key, value] = pair.split(":");
 
       if (key && value) {
         selected[key] = value;
@@ -215,8 +207,7 @@ function checkQuestion(
 
     return question.matchingItems.every(
       (item: any) =>
-        selected[item.id] ===
-        item.answerId
+        selected[item.id] === item.answerId
     );
   }
 
@@ -231,9 +222,7 @@ function checkQuestion(
 
     return (
       JSON.stringify(submitted) ===
-      JSON.stringify(
-        question.correctOrder
-      )
+      JSON.stringify(question.correctOrder)
     );
   }
 
@@ -251,160 +240,262 @@ export default function OkumaSonuc() {
     useState<Result | null>(null);
 
   useEffect(() => {
-  const loadResult = async () => {
-    try {
-      const saved =
-        sessionStorage.getItem(
-          "okuma_test_1_answers"
-        );
+    let mounted = true;
 
-      const answers: Record<
-        string,
-        string
-      > = saved
-        ? JSON.parse(saved)
-        : {};
+    const loadResult = async () => {
+      try {
+        /* =================================================
+           JAVOBLARNI O'QISH
+        ================================================= */
 
-      const questions =
-        test1.bolumler.flatMap(
-          (bolum) =>
-            bolum.questions
-        );
+        const saved =
+          sessionStorage.getItem(
+            "okuma_test_1_answers"
+          );
 
-      let correct = 0;
-      let blank = 0;
+        const answers: Record<string, string> =
+          saved
+            ? JSON.parse(saved)
+            : {};
 
-      const wrongAnswers: WrongAnswer[] =
-        [];
+        /* =================================================
+           SAVOLLAR
+        ================================================= */
 
-      questions.forEach(
-        (question: any, index: number) => {
-          const answer =
-            answers[question.id];
+        const questions =
+          test1.bolumler.flatMap(
+            (bolum) =>
+              bolum.questions
+          );
 
-          /* BOŞ */
-          if (
-            !answer ||
-            answer.trim() === ""
-          ) {
-            blank++;
-            return;
-          }
+        let correct = 0;
+        let blank = 0;
 
-          /* TO'G'RI */
-          if (
-            checkQuestion(
-              question,
-              answer
-            )
-          ) {
-            correct++;
-            return;
-          }
+        const wrongAnswers: WrongAnswer[] =
+          [];
 
-          /* XATO */
-          wrongAnswers.push({
-            number: index + 1,
-            questionId:
-              question.id,
-            questionText:
-              getQuestionText(
-                question,
-                index + 1
-              ),
-            userAnswer:
-              formatAnswer(
+        /* =================================================
+           TEKSHIRISH
+        ================================================= */
+
+        questions.forEach(
+          (
+            question: any,
+            index: number
+          ) => {
+            const answer =
+              answers[question.id];
+
+            /* BO'SH */
+            if (
+              !answer ||
+              answer.trim() === ""
+            ) {
+              blank++;
+              return;
+            }
+
+            /* TO'G'RI */
+            if (
+              checkQuestion(
                 question,
                 answer
-              ),
-            correctAnswer:
-              formatAnswer(
-                question,
-                question.correctAnswer ??
-                  ""
-              ),
-          });
-        }
-      );
+              )
+            ) {
+              correct++;
+              return;
+            }
 
-      const total =
-        questions.length;
+            /* XATO */
+            wrongAnswers.push({
+              number: index + 1,
 
-      const incorrect =
-        total -
-        correct -
-        blank;
+              questionId:
+                question.id,
 
-      const percentage =
-        total > 0
-          ? Math.round(
-              (correct / total) * 100
-            )
-          : 0;
+              questionText:
+                getQuestionText(
+                  question,
+                  index + 1
+                ),
 
-      const score =
-        getScore(correct);
+              userAnswer:
+                formatAnswer(
+                  question,
+                  answer
+                ),
 
-      const cefr =
-        getCEFRLevel(score);
-const visitorId =
-  localStorage.getItem("turkdili_visitor_id") ||
-  crypto.randomUUID();
-
-localStorage.setItem(
-  "turkdili_visitor_id",
-  visitorId
-);
-
-const { error } = await supabase
-  .from("test_attempts")
-  .insert({
-    visitor_id: visitorId,
-    test_id: "1",
-  });
-
-if (error) {
-  console.error(
-    "TEST ATTEMPT SAQLASH XATOSI:",
-    JSON.stringify(error, null, 2)
-  );
-} else {
-  console.log("TEST ATTEMPT SAQLANDI");
-
-  window.dispatchEvent(
-    new Event("test-attempt-saved")
-  );
-}
-      setResult({
-        total,
-        correct,
-        incorrect,
-        blank,
-        percentage,
-        score,
-        cefr,
-        wrongAnswers,
-      });
-    } catch {
-      const total =
-        test1.bolumler.reduce(
-          (sum, bolum) =>
-            sum +
-            bolum.questions.length,
-          0
+              correctAnswer:
+                formatAnswer(
+                  question,
+                  question.correctAnswer ??
+                    ""
+                ),
+            });
+          }
         );
 
-      setResult({
-        total,
-        correct: 0,
-        incorrect: 0,
-        blank: total,
-        percentage: 0,
-        score: 0,
-        cefr: "Sertifika Yok",
-        wrongAnswers: [],
-      });
-    }
+        /* =================================================
+           NATIJA
+        ================================================= */
+
+        const total =
+          questions.length;
+
+        const incorrect =
+          total -
+          correct -
+          blank;
+
+        const percentage =
+          total > 0
+            ? Math.round(
+                (correct / total) * 100
+              )
+            : 0;
+
+        const score =
+          getScore(correct);
+
+        const cefr =
+          getCEFRLevel(score);
+
+        /* =================================================
+           TESTNI SUPABASE'GA SAQLASH
+
+           MUHIM:
+           Bir xil natija sahifasi refresh bo'lsa
+           qayta +1 qilinmaydi.
+
+           "TESTI TEKRARLA" bosilganda bu flag
+           o'chiriladi va keyingi test +1 bo'ladi.
+        ================================================= */
+
+        const ATTEMPT_SAVED_KEY =
+          "okuma_test_1_attempt_saved";
+
+        const alreadySaved =
+          sessionStorage.getItem(
+            ATTEMPT_SAVED_KEY
+          );
+
+        if (!alreadySaved) {
+          const visitorIdKey =
+            "turkdili_visitor_id";
+
+          let visitorId =
+            localStorage.getItem(
+              visitorIdKey
+            );
+
+          if (!visitorId) {
+            visitorId =
+              crypto.randomUUID();
+
+            localStorage.setItem(
+              visitorIdKey,
+              visitorId
+            );
+          }
+
+          const {
+            error: insertError,
+          } = await supabase
+            .from("test_attempts")
+            .insert({
+              visitor_id:
+                visitorId,
+
+              test_id: "1",
+            });
+
+          if (insertError) {
+            console.error(
+              "TEST ATTEMPT SAQLASH XATOSI:",
+              JSON.stringify(
+                insertError,
+                null,
+                2
+              )
+            );
+          } else {
+            console.log(
+              "TEST ATTEMPT SAQLANDI"
+            );
+
+            /* Bir marta saqlanganini belgilaymiz */
+            sessionStorage.setItem(
+              ATTEMPT_SAVED_KEY,
+              "true"
+            );
+
+            /* Statistikani yangilash */
+            window.dispatchEvent(
+              new Event(
+                "test-attempt-saved"
+              )
+            );
+          }
+        } else {
+          console.log(
+            "BU TEST ALLAQACHON SAQLANGAN"
+          );
+        }
+
+        /* =================================================
+           RESULT STATE
+        ================================================= */
+
+        if (!mounted) {
+          return;
+        }
+
+        setResult({
+          total,
+          correct,
+          incorrect,
+          blank,
+          percentage,
+          score,
+          cefr,
+          wrongAnswers,
+        });
+      } catch (error) {
+        console.error(
+          "RESULT ERROR:",
+          error
+        );
+
+        if (!mounted) {
+          return;
+        }
+
+        const total =
+          test1.bolumler.reduce(
+            (sum, bolum) =>
+              sum +
+              bolum.questions.length,
+            0
+          );
+
+        setResult({
+          total,
+          correct: 0,
+          incorrect: 0,
+          blank: total,
+          percentage: 0,
+          score: 0,
+          cefr: "Sertifika Yok",
+          wrongAnswers: [],
+        });
+      }
+    };
+
+    loadResult();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   /* =========================================================
@@ -412,11 +503,28 @@ if (error) {
   ========================================================= */
 
   const restart = () => {
-  sessionStorage.removeItem("okuma_test_1_answers");
-  sessionStorage.removeItem("okuma_answers_test_1");
+    /*
+      Muhim:
+      Eski testning "saqlandi" belgisi o'chiriladi.
+      Shunda yangi test tugaganda +1 bo'ladi.
+    */
 
-  router.push("/okuma/1/bolum/1");
-};
+    sessionStorage.removeItem(
+      "okuma_test_1_attempt_saved"
+    );
+
+    sessionStorage.removeItem(
+      "okuma_test_1_answers"
+    );
+
+    sessionStorage.removeItem(
+      "okuma_answers_test_1"
+    );
+
+    router.push(
+      "/okuma/1/bolum/1"
+    );
+  };
 
   /* =========================================================
      LOADING
@@ -447,6 +555,7 @@ if (error) {
       <div className="mx-auto max-w-5xl px-4 py-8">
 
         {/* HEADER */}
+
         <div className="text-center">
 
           <div className="text-sm font-black tracking-[0.25em] text-[#a61b1b]">
@@ -464,6 +573,7 @@ if (error) {
         </div>
 
         {/* CEFR */}
+
         <div className="mt-8 rounded-3xl bg-[#8f1717] p-8 text-center text-white shadow-xl">
 
           <div className="text-sm font-bold uppercase tracking-widest text-white/70">
@@ -483,6 +593,7 @@ if (error) {
         </div>
 
         {/* STATS */}
+
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
 
           <Stat
@@ -508,6 +619,7 @@ if (error) {
         </div>
 
         {/* SUMMARY */}
+
         <div className="mt-8 rounded-3xl border border-[#e2dbd4] bg-white p-6 shadow-sm md:p-8">
 
           <h2 className="text-xl font-black">
@@ -559,9 +671,7 @@ if (error) {
 
         </div>
 
-        {/* =================================================
-            WRONG ANSWERS
-        ================================================= */}
+        {/* WRONG ANSWERS */}
 
         {result.wrongAnswers.length >
           0 && (
@@ -589,27 +699,35 @@ if (error) {
               {result.wrongAnswers.map(
                 (item) => (
                   <div
-                    key={item.questionId}
+                    key={
+                      item.questionId
+                    }
                     className="overflow-hidden rounded-3xl border border-red-200 bg-white shadow-sm"
                   >
 
                     {/* QUESTION HEADER */}
+
                     <div className="flex items-center justify-between border-b border-red-100 bg-red-50 px-5 py-4">
 
                       <div className="font-black text-red-700">
-                        ❌ Soru {item.number}
+                        ❌ Soru{" "}
+                        {item.number}
                       </div>
 
                     </div>
 
                     {/* QUESTION */}
+
                     <div className="p-6">
 
                       <div className="font-bold leading-7 text-gray-900">
-                        {item.questionText}
+                        {
+                          item.questionText
+                        }
                       </div>
 
                       {/* USER ANSWER */}
+
                       <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
 
                         <div className="text-xs font-black uppercase tracking-wider text-red-600">
@@ -617,12 +735,15 @@ if (error) {
                         </div>
 
                         <div className="mt-2 font-bold text-red-800">
-                          {item.userAnswer}
+                          {
+                            item.userAnswer
+                          }
                         </div>
 
                       </div>
 
                       {/* CORRECT ANSWER */}
+
                       <div className="mt-3 rounded-2xl border border-green-200 bg-green-50 p-4">
 
                         <div className="text-xs font-black uppercase tracking-wider text-green-600">
@@ -630,7 +751,9 @@ if (error) {
                         </div>
 
                         <div className="mt-2 font-bold text-green-800">
-                          {item.correctAnswer}
+                          {
+                            item.correctAnswer
+                          }
                         </div>
 
                       </div>
@@ -647,6 +770,7 @@ if (error) {
         )}
 
         {/* ALL CORRECT */}
+
         {result.wrongAnswers.length ===
           0 &&
           result.incorrect === 0 &&
@@ -669,6 +793,7 @@ if (error) {
           )}
 
         {/* BUTTONS */}
+
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
 
           <button
@@ -757,4 +882,3 @@ function ResultRow({
     </div>
   );
 }
-
