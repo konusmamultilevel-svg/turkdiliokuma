@@ -19,8 +19,7 @@ export default function SiteStats() {
 
     const loadStats = async () => {
       try {
-        // Ushbu tashrifchini bazaga qo'shamiz
-        await supabase
+        const { error: insertError } = await supabase
           .from("site_visits")
           .upsert(
             {
@@ -32,33 +31,39 @@ export default function SiteStats() {
             }
           );
 
-        // Tashrifchilar soni
+        if (insertError) {
+          console.error("VISITOR INSERT ERROR:", insertError);
+        }
+
         const { data: visits, error: visitsError } = await supabase
           .from("site_visits")
           .select("visitor_id");
 
-        if (visitsError) throw visitsError;
+        if (visitsError) {
+          console.error("VISITOR SELECT ERROR:", visitsError);
+        } else {
+          const uniqueVisitors = new Set(
+            (visits || []).map((item) => item.visitor_id)
+          );
 
-        const uniqueVisitors = new Set(
-          (visits || []).map((item) => item.visitor_id)
-        );
+          setVisitors(uniqueVisitors.size);
+        }
 
-        setVisitors(uniqueVisitors.size);
-
-        // Test ishlaganlar
         const { data: attempts, error: attemptsError } = await supabase
           .from("test_attempts")
           .select("visitor_id");
 
-        if (attemptsError) throw attemptsError;
+        if (attemptsError) {
+          console.error("TEST USERS ERROR:", attemptsError);
+        } else {
+          const uniqueTestUsers = new Set(
+            (attempts || []).map((item) => item.visitor_id)
+          );
 
-        const uniqueTestUsers = new Set(
-          (attempts || []).map((item) => item.visitor_id)
-        );
-
-        setTestUsers(uniqueTestUsers.size);
+          setTestUsers(uniqueTestUsers.size);
+        }
       } catch (error) {
-        console.error("Statistics error:", error);
+        console.error("STATISTICS ERROR:", error);
       }
     };
 
@@ -67,9 +72,8 @@ export default function SiteStats() {
 
   return (
     <div className="mt-7 flex justify-center gap-4">
-      {/* TASHRIFCHILAR */}
       <div
-        className="flex items-center gap-3 rounded-2xl border bg-white px-5 py-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        className="flex items-center gap-3 rounded-2xl border bg-white px-5 py-3 shadow-sm"
         style={{ borderColor: "#F8DADA" }}
       >
         <div
@@ -93,9 +97,8 @@ export default function SiteStats() {
         </div>
       </div>
 
-      {/* TEST ISHLAGANLAR */}
       <div
-        className="flex items-center gap-3 rounded-2xl border bg-white px-5 py-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        className="flex items-center gap-3 rounded-2xl border bg-white px-5 py-3 shadow-sm"
         style={{ borderColor: "#F8DADA" }}
       >
         <div
