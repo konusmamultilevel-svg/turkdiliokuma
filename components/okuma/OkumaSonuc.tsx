@@ -370,6 +370,10 @@ if (error) {
   );
 } else {
   console.log("TEST ATTEMPT SAQLANDI");
+
+  window.dispatchEvent(
+    new Event("test-attempt-saved")
+  );
 }
       setResult({
         total,
